@@ -13,7 +13,7 @@ def index():
 def download():
     link = request.form['youtube_link']
     try:
-        yt = YouTube(link, use_oauth_token=True)
+        yt = YouTube(link, use_po_token=True)
         audio_stream = yt.streams.filter(only_audio=True).first()
         video_stream = yt.streams.get_highest_resolution()
     except HTTPError as e:
