@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Downloader</h1>
+        <form id="downloadForm" method="post" action="/download">
+            <label for="youtube_link">YouTube Link:</label><br>
+            <input type="text" id="youtube_link" name="youtube_link" placeholder="Input Link here"><br>
+            <label for="download_choice">Choose what to download:</label><br>
+            <select id="download_choice" name="download_choice">
+                <option value="mp4">MP4 Video</option>
+                <option value="mp3">MP3 Audio</option>
+            </select><br>
+            <input type="submit" value="Download" id="downloadButton">
+            <p id="errorMessage" class="error" style="display: none;"></p>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', function(event) {
+            var youtubeLink = document.getElementById('youtube_link').value.trim();
+            var downloadChoice = document.getElementById('download_choice').value.trim();
+
+            if (!youtubeLink) {
+                document.getElementById('errorMessage').innerText = 'YouTube link is required.';
+                document.getElementById('errorMessage').style.display = 'block';
+                event.preventDefault();
+            } else if (!isValidYoutubeLink(youtubeLink)) {
+                document.getElementById('errorMessage').innerText = 'Invalid YouTube link.';
+                document.getElementById('errorMessage').style.display = 'block';
+                event.preventDefault();
+            } else {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+        });
+
+        function isValidYoutubeLink(link) {
+            // Regular expression to validate YouTube URL
+            var youtubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+            return youtubeRegex.test(link);
+        }
+    </script>
+</body>
+</html>

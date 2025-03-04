@@ -1,0 +1,69 @@
+/* style.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #000c23;
+}
+
+.container {
+    max-width: 500px;
+    margin: 50px auto;
+    background-color: #051007;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 15px 25px rgba(0,0,0,.6);
+}
+label{
+    color:#00ff1e;
+    
+}
+
+h1 {
+    text-align: center;
+    color: #00ff00;
+}
+
+form {
+    text-align: center;
+}
+
+input[type="text"], select, input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+input[type="submit"] {
+    background-color: #10a615;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+input[type="submit"]:hover {
+    background-color: #00ff15;
+}
+
+.error {
+    color: red;
+    margin-top: 5px;
+}
+
+/* Mobile Responsive Styles */
+@media only screen and (max-width: 600px) {
+    .container {
+        /* margin-top: 50%; */
+        margin: 20px;
+        padding: 10px;
+    }
+
+    input[type="text"], select, input[type="submit"] {
+        width: 90%;
+    }
+}
