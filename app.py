@@ -12,13 +12,11 @@ def index():
 def download():
     link = request.form['youtube_link']
     try:
-        yt = YouTube(link, use_oauth=True)
+        yt = YouTube(link)
         audio_stream = yt.streams.filter(only_audio=True).first()
         video_stream = yt.streams.get_highest_resolution()
     except HTTPError as e:
         return f"An error occurred while accessing the video: {e}"
-    except Exception as e:
-        return f"An error occurred: {e}"
 
     choice = request.form['download_choice']
     if choice == "mp4":
@@ -37,6 +35,7 @@ def download():
             return f"An error occurred while downloading the audio: {e}"
     else:
         return "Invalid choice. Please enter 'mp4' or 'mp3'."
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)
