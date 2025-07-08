@@ -4,9 +4,10 @@ import urllib.request
 from flask import Flask, render_template, request, send_file, after_this_request
 from pytubefix import YouTube
 import pytubefix.request
+from pytubefix.exceptions import VideoUnavailable
 from urllib.error import HTTPError
 
-# ✅ Patch pytubefix to avoid bot detection using a custom User-Agent
+# Patch pytubefix to avoid bot detection using a custom User-Agent
 def custom_urlopen(url, *args, **kwargs):
     if isinstance(url, str):
         req = urllib.request.Request(
@@ -25,7 +26,6 @@ def custom_urlopen(url, *args, **kwargs):
 
 pytubefix.request.urlopen = custom_urlopen
 
-# ✅ Flask app setup
 app = Flask(__name__)
 
 @app.route('/')
@@ -41,15 +41,18 @@ def download():
     choice = request.form['download_choice']
 
     try:
-        yt = YouTube(link)
+        yt = YouTube(link, use_po_token=True)
+        yt.check_availability()  # Raises VideoUnavailable if not accessible
+
         audio_stream = yt.streams.filter(only_audio=True).first()
         video_stream = yt.streams.get_highest_resolution()
+    except VideoUnavailable:
+        return "The requested video is unavailable or private."
     except HTTPError as e:
         return f"An error occurred while accessing the video: {e}"
     except Exception as e:
         return f"Failed to initialize YouTube: {e}"
 
-    # ✅ Use temporary folder for cloud deployment
     downloads_folder = "/tmp/YTDownloader"
     os.makedirs(downloads_folder, exist_ok=True)
 
