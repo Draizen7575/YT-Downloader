@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import urllib.request
 from flask import Flask, render_template, request, send_file, after_this_request
 from pytubefix import YouTube
@@ -7,7 +8,7 @@ import pytubefix.request
 from pytubefix.exceptions import VideoUnavailable
 from urllib.error import HTTPError
 
-# Patch pytubefix to avoid bot detection using a custom User-Agent
+# Patch pytubefix request.urlopen to set custom User-Agent header
 def custom_urlopen(url, *args, **kwargs):
     if isinstance(url, str):
         req = urllib.request.Request(
@@ -28,12 +29,35 @@ pytubefix.request.urlopen = custom_urlopen
 
 app = Flask(__name__)
 
+def sanitize_filename(filename):
+    return re.sub(r'[<>:"/\\|?*]', '', filename)
+
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # seconds
+
+def fetch_yt_with_retries(link):
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            yt = YouTube(link, use_po_token=True)
+            yt.check_availability()
+            return yt
+        except HTTPError as e:
+            if e.code == 429:
+                if attempt < MAX_RETRIES:
+                    time.sleep(RETRY_DELAY)
+                    continue
+                else:
+                    raise
+            else:
+                raise
+        except VideoUnavailable:
+            raise
+        except Exception:
+            raise
+
 @app.route('/')
 def index():
     return render_template('index.html')
-
-def sanitize_filename(filename):
-    return re.sub(r'[<>:"/\\|?*]', '', filename)
 
 @app.route('/download', methods=['POST'])
 def download():
@@ -41,9 +65,7 @@ def download():
     choice = request.form['download_choice']
 
     try:
-        yt = YouTube(link, use_po_token=True)
-        yt.check_availability()  # Raises VideoUnavailable if not accessible
-
+        yt = fetch_yt_with_retries(link)
         audio_stream = yt.streams.filter(only_audio=True).first()
         video_stream = yt.streams.get_highest_resolution()
     except VideoUnavailable:
