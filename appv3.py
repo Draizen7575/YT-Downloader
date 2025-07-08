@@ -1,14 +1,12 @@
 import os
 import re
-import time
 import urllib.request
 from flask import Flask, render_template, request, send_file, after_this_request
 from pytubefix import YouTube
 import pytubefix.request
-from pytubefix.exceptions import VideoUnavailable
 from urllib.error import HTTPError
 
-# Patch pytubefix request.urlopen to set custom User-Agent header
+# ✅ Patch pytubefix to avoid bot detection using a custom User-Agent
 def custom_urlopen(url, *args, **kwargs):
     if isinstance(url, str):
         req = urllib.request.Request(
@@ -27,37 +25,15 @@ def custom_urlopen(url, *args, **kwargs):
 
 pytubefix.request.urlopen = custom_urlopen
 
+# ✅ Flask app setup
 app = Flask(__name__)
-
-def sanitize_filename(filename):
-    return re.sub(r'[<>:"/\\|?*]', '', filename)
-
-MAX_RETRIES = 3
-RETRY_DELAY = 5  # seconds
-
-def fetch_yt_with_retries(link):
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            yt = YouTube(link, use_po_token=True)
-            yt.check_availability()
-            return yt
-        except HTTPError as e:
-            if e.code == 429:
-                if attempt < MAX_RETRIES:
-                    time.sleep(RETRY_DELAY)
-                    continue
-                else:
-                    raise
-            else:
-                raise
-        except VideoUnavailable:
-            raise
-        except Exception:
-            raise
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+def sanitize_filename(filename):
+    return re.sub(r'[<>:"/\\|?*]', '', filename)
 
 @app.route('/download', methods=['POST'])
 def download():
@@ -65,16 +41,15 @@ def download():
     choice = request.form['download_choice']
 
     try:
-        yt = fetch_yt_with_retries(link)
+        yt = YouTube(link)
         audio_stream = yt.streams.filter(only_audio=True).first()
         video_stream = yt.streams.get_highest_resolution()
-    except VideoUnavailable:
-        return "The requested video is unavailable or private."
     except HTTPError as e:
         return f"An error occurred while accessing the video: {e}"
     except Exception as e:
         return f"Failed to initialize YouTube: {e}"
 
+    # ✅ Use temporary folder for cloud deployment
     downloads_folder = "/tmp/YTDownloader"
     os.makedirs(downloads_folder, exist_ok=True)
 
@@ -118,4 +93,4 @@ def download():
         return "Invalid choice. Please enter 'mp4' or 'mp3'."
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",debug=True)
